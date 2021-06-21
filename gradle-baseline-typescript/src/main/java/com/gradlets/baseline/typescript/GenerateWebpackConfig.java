@@ -19,9 +19,13 @@ package com.gradlets.baseline.typescript;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
@@ -33,23 +37,30 @@ public abstract class GenerateWebpackConfig extends DefaultTask {
     abstract Property<String> getWebpackOutputDir();
 
     @Input
-    abstract Property<String> getEntryPoint();
+    abstract Property<String> getTsEntryPoint();
+
+    @Input
+    abstract Property<String> getSassEntryPoint();
 
     @OutputFile
     abstract RegularFileProperty getOutputFile();
 
     @TaskAction
     public final void generate() {
+        List<String> entryPoints =
+                        Stream.of(getTsEntryPoint().get(), getSassEntryPoint().get()).filter(file -> )
         GFileUtils.writeFile(
-                getWebpackConfig(getWebpackOutputDir().get(), getEntryPoint().get()),
+                getWebpackConfig(getWebpackOutputDir().get(), entryPoints),
                 getOutputFile().get().getAsFile());
     }
 
-    private static String getWebpackConfig(String outputDir, String entryPoint) {
+    private static String getWebpackConfig(String outputDir, List<String> entryPoints) {
         try {
             return Resources.toString(Resources.getResource("webpack.template.js"), StandardCharsets.UTF_8)
                     .replace("__OUTPUT_DIR__", "'" + outputDir + "'")
-                    .replace("__ENTRY_POINT__", "'" + entryPoint + "'");
+                    .replace(
+                            "__ENTRY_POINTS__",
+                            entryPoints.stream().map(s -> "'" + s + "'").collect(Collectors.joining(", ", "[", "]")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

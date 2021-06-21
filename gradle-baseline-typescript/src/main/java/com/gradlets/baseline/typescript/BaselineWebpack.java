@@ -40,16 +40,19 @@ public final class BaselineWebpack implements Plugin<Project> {
         TypeScriptPluginExtension tsExt = project.getExtensions().getByType(TypeScriptPluginExtension.class);
         Provider<RegularFile> configFile =
                 project.getLayout().getBuildDirectory().file("webpack.config.js");
+        Provider<RegularFile> devConfigFile =
+                project.getLayout().getBuildDirectory().file("webpack-dev.config.js");
 
         WebpackExtension webpackExt = project.getExtensions().getByType(WebpackExtension.class);
         webpackExt.getConfigFile().set(configFile);
+        webpackExt.getDevServerConfigFile().set(devConfigFile);
 
         TaskProvider<GenerateWebpackConfig> generateWebpackConfig = project.getTasks()
                 .register("generateWebpackConfig", GenerateWebpackConfig.class, task -> {
                     task.getOutputFile().set(configFile);
                     task.getWebpackOutputDir().set(webpackExt.getOutputDir().map(dir -> dir.getAsFile()
                             .getAbsolutePath()));
-                    task.getEntryPoint()
+                    task.getTsEntryPoint()
                             .set(tsExt.getSourceSets()
                                     .getByName("main")
                                     .getSource()
@@ -58,6 +61,7 @@ public final class BaselineWebpack implements Plugin<Project> {
                                     .resolve("index.js")
                                     .toAbsolutePath()
                                     .toString());
+                    task.getSassEntryPoint().set(tsExt.);
                 });
 
         project.getTasks().withType(WebpackTask.class, bundleWebpack -> {
@@ -69,10 +73,16 @@ public final class BaselineWebpack implements Plugin<Project> {
 
     private static void configureWebpackConfiguration(Project project, TypeScriptPluginExtension tsExt) {
         Configuration webpack = project.getConfigurations().getByName(WebpackPlugin.WEBPACK_CONFIGURATION_NAME);
-        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:source-map-loader:2.0.1");
-        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:webpack:5.21.2");
-        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:webpack-cli:4.5.0");
-        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:webpack-dev-server:4.0.0-beta.2");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:source-map-loader:3.0.0");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:webpack:5.38.1");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:webpack-cli:4.7.0");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:webpack-dev-server:4.0.0-beta.3");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:css-loader:5.2.6");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:file-loader:6.2.0");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:mini-css-extract-plugin:1.6.0");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:sass:1.34.1");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:sass-loader:12.0.0");
+        project.getDependencies().add(WebpackPlugin.WEBPACK_CONFIGURATION_NAME, "npm:svg-inline-loader:0.8.2");
 
         webpack.getDependencyConstraints()
                 .add(project.getDependencies().getConstraints().create("npm:types/eslint:7.2.6"));
